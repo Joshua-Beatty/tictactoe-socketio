@@ -41,7 +41,7 @@ io.on('connect', socket => {
 		delete gamesStart[room];
 	});
 });
-
-server.listen(process.env.PORT || 5000, () => {
-	console.log('go to http://localhost:' + process.env.PORT || 5000);
+const PORT = process.env.PORT || 3000
+server.listen(PORT, () => {
+	console.log('go to http://localhost:' + PORT);
 });

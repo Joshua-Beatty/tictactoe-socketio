@@ -194,9 +194,18 @@
 
 			} else if(cells["cell-1"].getAttribute("tictype") == cells["cell-5"].getAttribute("tictype") && cells["cell-5"].getAttribute("tictype") == cells["cell-9"].getAttribute("tictype") && cells["cell-1"].getAttribute("tictype") !== null){
 				winner(cells["cell-1"].getAttribute("tictype"));
-
 			} else if(cells["cell-7"].getAttribute("tictype") == cells["cell-5"].getAttribute("tictype") && cells["cell-5"].getAttribute("tictype") == cells["cell-3"].getAttribute("tictype") && cells["cell-7"].getAttribute("tictype") !== null){
 				winner(cells["cell-1"].getAttribute("tictype"));
+			} else {
+				var count = 0
+				for (var i = 0; i < cells.length; i++) {
+					if(cells.item(i).getAttribute("tictype") !== null){
+						count++;
+					}
+				}
+				if(count == 9){
+					winner(0);
+				}
 			}
 			if(!gameOver){
 				yourTurn = yourTurn * -1;
@@ -214,7 +223,6 @@
 					}
 					document.getElementById("oponentGo").style.display = "block";
 					document.getElementById("youGo").style.display = "none";
-
 				}
 			}
 			
@@ -229,9 +237,11 @@ function clickedCell(evt){
 	}
 }
 function winner(winnerIs){
-	if(yourTurn == 1){
+	if(winnerIs == 0){
+		document.getElementById("winMsg").innerHTML = "It's a draw!"
+	}else if(yourTurn == 1){
 		document.getElementById("winMsg").innerHTML = "You Win!"
-	} else {
+	} else if(yourTurn == -1) {
 		document.getElementById("winMsg").innerHTML = "You Lose!"
 	}
 	gameOver = true;
