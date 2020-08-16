@@ -42,6 +42,6 @@ io.on('connect', socket => {
 	});
 });
 
-server.listen(8080, () => {
-	console.log('go to http://localhost:8080');
+server.listen(process.env.PORT || 5000, () => {
+	console.log('go to http://localhost:' + process.env.PORT || 5000);
 });
