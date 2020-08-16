@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Tic-Tac-Toe</title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<style>.navtext {
+		pointer-events: none;
+		cursor: default;
+		margin-left: 1ex;
+		margin-right: 1ex;
+	}</style>
+</head>
+<body>
+	<nav>
+		<div class="nav-wrapper">
+			<a href="#" class="navtext brand-logo">Tic-Tac-Toe</a>
+			<a href="#" class="navtext brand-logo right" id="roomcode" style="display:none">Room: 4598</a>
+		</div>
+	</nav>
+	<center id="loginPage" style="font-size: 30px;">
+		<div style="height:0.5rem"></div>
+		<h1 class="header">Game Room:</h1>
+		<div style="height:1rem"></div>
+		<div class="input-field col s6" style="width:7em;">
+			<input placeholder="A 4 digit pin" id="roomName" class="validate" style="font-size: 30px; text-align: center;" maxlength="4" type="text">
+			<script>document.querySelector("#roomName").onkeypress = function(e) {return "1234567890".indexOf(String.fromCharCode(e.which)) >= 0;};</script>
+		</div>
+		<br>
+		<a class="waves-effect waves-light btn-large" id="joinButton" style="font-size: 30px;">Join Room</a>
+		<br>
+		<div  id="loading" style="display:none;padding-top:3ex">
+			<div class="preloader-wrapper big active">
+				<div class="spinner-layer spinner-red-only">
+					<div class="circle-clipper left">
+						<div class="circle"></div>
+					</div><div class="gap-patch">
+						<div class="circle"></div>
+					</div><div class="circle-clipper right">
+						<div class="circle"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<h3 id="waitMessage" style="padding:0rem; display: none">Waiting for someone to join the room</h3>
+</center>
+<style>
+	td {
+		border: 5px solid black;
+		height: 11vw;
+		width: 11vw;
+		position: relative;
+	}
+	tr {
+		border: 5px solid black;
+		width: 33vw;
+	}
+	table{
+		width: 33vw;
+	}
+	#board {
+		padding-top:3em;
+	}
+	.cellgo:hover{
+		background-color: lightgrey;
+	}
+	.cellgo:active{
+		background-color: grey;
+	}
+	img{
+		margin: auto;
+		position: absolute;
+		left:0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+	}
+	.x{
+		height:10vw;
+	}
+	.o{
+		height:8vw;
+
+	}
+</style>
+
+<center id="ticpage" style="display:none">
+	<div id="board">
+		<table>
+			<tr>
+				<td class="cell " id="cell-1"></td>
+				<td class="cell " id="cell-2"></td>
+				<td class="cell " id="cell-3"></td>
+			</tr>
+			<tr>
+				<td class="cell " id="cell-4"></td>
+				<td class="cell " id="cell-5"></td>
+				<td class="cell " id="cell-6"></td>
+			</tr>
+			<tr>
+				<td class="cell " id="cell-7"></td>
+				<td class="cell " id="cell-8"></td>
+				<td class="cell " id="cell-9"></td>
+			</tr>
+		</table>
+	</div>
+	<h3 id="youGo" style="padding:0rem; display: none">Your turn!</h3>
+	<div id="oponentGo"  style="padding:0rem; display: none">
+		<!--<div class="progress" style="width:33%">
+			<div class="indeterminate"></div>
+		</div>-->
+		<h3 >Waiting for oponent to go</h3>
+	</div>
+
+	<div id="goAgain" style="display:none;">
+		<h3 id="winMsg">o</h3>
+		<a class="waves-effect waves-light btn-large" id="playAnother" style="font-size: 30px;">Play Another</a>	
+	</div>
+</center>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+	const socket = io();
+	let userId = ""
+	let gameRoom = ""
+	let yourTurn = 0;
+	let isX = 0;
+	let gameOver = false;
+	socket.on('connect', () => {
+		userId = socket.id;
+		socket.on('status', (data) => {
+			if(data == "taken"){
+				alert("Game Room is full please try again");
+				document.getElementById('roomName').value = "";
+				document.getElementById("loading").style.display = "none";
+				document.getElementById("joinButton").classList.remove("disabled");
+				document.getElementById("roomName").removeAttribute("readonly");
+			}
+			if(data == "chill"){
+				document.getElementById("waitMessage").style.display = "block";
+			}
+		});
+		socket.on('go', (data) => {
+			yourTurn = data;
+			isX = parseInt(yourTurn);
+			gameRoom = document.getElementById('roomName').value;
+			document.getElementById("loginPage").style.display = "none";
+			document.getElementById("roomcode").style.display = "block";
+			document.getElementById("ticpage").style.display = "block";
+			document.getElementById("roomcode").innerHTML = "Room: " + gameRoom;
+			var cells = document.getElementsByClassName("cell");
+			for (var i = 0; i < cells.length; i++) {
+				cells.item(i).addEventListener("click", clickedCell);
+			}
+			if (yourTurn == 1){
+				var cells = document.getElementsByClassName("cell");
+				for (var i = 0; i < cells.length; i++) {
+					cells.item(i).classList.add("cellgo");
+				}
+				document.getElementById("youGo").style.display = "block";
+			} else {
+				document.getElementById("oponentGo").style.display = "block";
+			}
+		});
+		socket.on('game', (data) => {
+			if(yourTurn == 1){
+				document.getElementById(data).innerHTML = isX - 1 ?  '<img src="circle.svg" class="o" alt="circle">':'<img src="x.svg" class="x" alt="X">' 
+				document.getElementById(data).setAttribute("tictype",  isX - 1 ? "oCell" : "xCell" );
+			} else{
+				document.getElementById(data).innerHTML = isX - 1 ?  '<img src="x.svg" class="x" alt="X">' : '<img src="circle.svg" class="o" alt="circle">' 
+				document.getElementById(data).setAttribute("tictype",  isX - 1 ? "xCell" : "oCell" );
+			}
+			var cells = document.getElementsByClassName("cell");
+			if(cells["cell-1"].getAttribute("tictype") == cells["cell-2"].getAttribute("tictype") && cells["cell-2"].getAttribute("tictype") == cells["cell-3"].getAttribute("tictype") && cells["cell-1"].getAttribute("tictype") !== null){
+				winner(cells["cell-1"].getAttribute("tictype"));
+
+			} else if(cells["cell-4"].getAttribute("tictype") == cells["cell-5"].getAttribute("tictype") && cells["cell-5"].getAttribute("tictype") == cells["cell-6"].getAttribute("tictype") && cells["cell-4"].getAttribute("tictype") !== null){
+				winner(cells["cell-1"].getAttribute("tictype"));
+
+			} else if(cells["cell-7"].getAttribute("tictype") == cells["cell-8"].getAttribute("tictype") && cells["cell-8"].getAttribute("tictype") == cells["cell-9"].getAttribute("tictype") && cells["cell-7"].getAttribute("tictype") !== null){
+				winner(cells["cell-1"].getAttribute("tictype"));
+
+			} else if(cells["cell-1"].getAttribute("tictype") == cells["cell-4"].getAttribute("tictype") && cells["cell-4"].getAttribute("tictype") == cells["cell-7"].getAttribute("tictype") && cells["cell-1"].getAttribute("tictype") !== null){
+				winner(cells["cell-1"].getAttribute("tictype"));
+
+			} else if(cells["cell-2"].getAttribute("tictype") == cells["cell-5"].getAttribute("tictype") && cells["cell-5"].getAttribute("tictype") == cells["cell-8"].getAttribute("tictype") && cells["cell-2"].getAttribute("tictype") !== null){
+				winner(cells["cell-1"].getAttribute("tictype"));
+
+			} else if(cells["cell-3"].getAttribute("tictype") == cells["cell-6"].getAttribute("tictype") && cells["cell-6"].getAttribute("tictype") == cells["cell-9"].getAttribute("tictype") && cells["cell-3"].getAttribute("tictype") !== null){
+				winner(cells["cell-1"].getAttribute("tictype"));
+
+			} else if(cells["cell-1"].getAttribute("tictype") == cells["cell-5"].getAttribute("tictype") && cells["cell-5"].getAttribute("tictype") == cells["cell-9"].getAttribute("tictype") && cells["cell-1"].getAttribute("tictype") !== null){
+				winner(cells["cell-1"].getAttribute("tictype"));
+
+			} else if(cells["cell-7"].getAttribute("tictype") == cells["cell-5"].getAttribute("tictype") && cells["cell-5"].getAttribute("tictype") == cells["cell-3"].getAttribute("tictype") && cells["cell-7"].getAttribute("tictype") !== null){
+				winner(cells["cell-1"].getAttribute("tictype"));
+			}
+			if(!gameOver){
+				yourTurn = yourTurn * -1;
+				if (yourTurn == 1){
+					for (var i = 0; i < cells.length; i++) {
+						if(cells.item(i).innerHTML == ""){
+							cells.item(i).classList.add("cellgo");
+						}
+					}
+					document.getElementById("oponentGo").style.display = "none";
+					document.getElementById("youGo").style.display = "block";
+				} else {
+					for (var i = 0; i < cells.length; i++) {
+						cells.item(i).classList.remove("cellgo");
+					}
+					document.getElementById("oponentGo").style.display = "block";
+					document.getElementById("youGo").style.display = "none";
+
+				}
+			}
+			
+		});
+		socket.on('print', (data) => {
+			console.log(data)
+		});
+	});
+function clickedCell(evt){
+	if(yourTurn == 1  && document.getElementById(evt.currentTarget.id).innerHTML == "" && !gameOver){
+		socket.emit('gamePlay', userId, gameRoom, evt.currentTarget.id);
+	}
+}
+function winner(winnerIs){
+	if(yourTurn == 1){
+		document.getElementById("winMsg").innerHTML = "You Win!"
+	} else {
+		document.getElementById("winMsg").innerHTML = "You Lose!"
+	}
+	gameOver = true;
+	socket.emit('gameOver', gameRoom);
+	var cells = document.getElementsByClassName("cell");
+	for (var i = 0; i < cells.length; i++) {
+		cells.item(i).classList.remove("cellgo");
+	}
+	document.getElementById("oponentGo").style.display = "none";
+	document.getElementById("youGo").style.display = "none";
+	document.getElementById("goAgain").style.display = "block";
+}
+function requestJoin(){
+	document.getElementById("joinButton").classList.add("disabled");
+	document.getElementById("roomName").setAttribute("readonly", "readonly");
+	let gr = document.getElementById('roomName').value;
+	socket.emit('gameRoomCheck', [userId, gr]);
+	document.getElementById("loading").style.display = "block";
+}
+function reload(){
+	location.reload(); 
+}
+window.onload = function () {
+	document.getElementById("joinButton").addEventListener("click", requestJoin);
+	document.getElementById("playAnother").addEventListener("click", reload);
+}
+</script>
+</body>
+</html>
